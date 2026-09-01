@@ -33,6 +33,12 @@ class MainActivity : AppCompatActivity() {
             while (br.readLine().also { line = it } != null) {
                 sb.appendLine(line)
             }
+            // 也要读取错误流，方便调试
+            val errBr = BufferedReader(InputStreamReader(proc.errorStream))
+            var errLine: String?
+            while (errBr.readLine().also { errLine = it } != null) {
+                sb.appendLine("ERR: $errLine")
+            }
             proc.waitFor()
             sb.toString().trim()
         } catch (e: Exception) {
@@ -47,23 +53,42 @@ class MainActivity : AppCompatActivity() {
             input.close()
             val tempFile = cacheDir.resolve(assetName)
             tempFile.writeBytes(bytes)
-            runSu("mkdir -p $targetDir")
-            runSu("cp ${tempFile.absolutePath} $destPath")
-            runSu("chmod 755 $destPath")
+            
+            // 先确保目标目录存在
+            val mkdirResult = runSu("mkdir -p $targetDir")
+            if (mkdirResult.startsWith("ERR")) {
+                tempFile.delete()
+                return false
+            }
+            
+            // 复制文件
+            val cpResult = runSu("cp ${tempFile.absolutePath} $destPath")
+            if (cpResult.startsWith("ERR")) {
+                tempFile.delete()
+                return false
+            }
+            
+            // 设置权限
+            val chmodResult = runSu("chmod 755 $destPath")
             tempFile.delete()
-            true
+            
+            !chmodResult.startsWith("ERR")
         } catch (e: Exception) {
+            e.printStackTrace()
             false
         }
     }
 
     private fun isScriptInstalled(): Boolean {
-        val ret = runSu("test -f $scriptProxy && echo ok")
-        return ret == "ok"
+        // 使用 ls 命令检查文件是否存在且可执行
+        val ret = runSu("ls -l $scriptProxy 2>/dev/null && echo EXISTS")
+        // 更精确的匹配
+        return ret.contains("EXISTS") && !ret.startsWith("ERR")
     }
 
     private fun isRunning(): Boolean {
-        val out = runSu("pgrep -f proxy.sh")
+        // 使用 ps 或 pgrep 检查进程，部分设备不支持 pgrep
+        val out = runSu("ps -A | grep -E 'proxy.sh|bash.*proxy.sh|sh.*proxy.sh' | grep -v grep")
         return out.isNotEmpty() && !out.startsWith("ERR")
     }
 
@@ -111,7 +136,8 @@ class MainActivity : AppCompatActivity() {
 
         btnStart.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                runSu("sh $scriptProxy &")
+                // 使用 nohup 确保后台运行
+                runSu("nohup sh $scriptProxy > $logFile 2>&1 &")
                 launch(Dispatchers.Main) {
                     Toast.makeText(this@MainActivity, "已发送启动请求", Toast.LENGTH_SHORT).show()
                     refreshUi()
@@ -131,12 +157,12 @@ class MainActivity : AppCompatActivity() {
 
         btnViewLog.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                val logText = runSu("tail -n 40 $logFile")
+                val logText = runSu("tail -n 40 $logFile 2>/dev/null")
                 launch(Dispatchers.Main) {
                     android.app.AlertDialog.Builder(this@MainActivity)
                         .setTitle("运行日志")
-                        .setMessage(if(logText.isBlank())"日志为空" else logText)
-                        .setPositiveButton("关闭",null)
+                        .setMessage(if (logText.isBlank() || logText.startsWith("ERR")) "日志为空" else logText)
+                        .setPositiveButton("关闭", null)
                         .show()
                 }
             }
