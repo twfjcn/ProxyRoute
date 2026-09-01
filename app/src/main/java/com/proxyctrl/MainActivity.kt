@@ -55,130 +55,131 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun generateProxyScript(): String {
-        return """
-#!/system/bin/sh
-# ============================================
-# 代理守护脚本 - 自动生成
-# ============================================
-
-TARGET_DIR="/data/local/proxy"
-LOG_FILE="\$TARGET_DIR/run.log"
-PID_FILE="\$TARGET_DIR/proxy.pid"
-
-log() {
-    echo "\$(date '+%Y-%m-%d %H:%M:%S') [INFO] \$1" >> \$LOG_FILE
-}
-
-# 获取默认路由接口
-get_default_iface() {
-    local iface=\$(ip route show default 2>/dev/null | grep -oP 'dev \K\S+' | head -1)
-    if [ -z "\$iface" ]; then
-        iface=\$(ip link show | grep -E '^[0-9]+:' | grep -v lo | head -1 | awk -F': ' '{print \$2}')
-    fi
-    if [ -z "\$iface" ]; then
-        iface="wlan0"
-    fi
-    echo "\$iface"
-}
-
-log "========================================"
-log "代理守护启动"
-
-# 启用 IP 转发
-echo 1 > /proc/sys/net/ipv4/ip_forward
-log "IP 转发已启用"
-
-# 获取接口
-IFACE=\$(get_default_iface)
-log "使用接口: \$IFACE"
-
-# 清理旧规则
-iptables -t nat -F 2>/dev/null
-iptables -F 2>/dev/null
-ip rule del fwmark 0x1 table 100 2>/dev/null
-ip route flush table 100 2>/dev/null
-
-# 添加转发规则
-iptables -t nat -A POSTROUTING -o \$IFACE -j MASQUERADE 2>/dev/null
-iptables -A FORWARD -i \$IFACE -o \$IFACE -j ACCEPT 2>/dev/null
-iptables -A FORWARD -i \$IFACE -j ACCEPT 2>/dev/null
-iptables -A FORWARD -o \$IFACE -j ACCEPT 2>/dev/null
-
-# 添加路由规则
-ip rule add fwmark 0x1 table 100 priority 100 2>/dev/null
-ip route add default dev \$IFACE table 100 2>/dev/null
-
-log "路由规则设置完成"
-
-# 记录 PID
-echo \$\$ > \$PID_FILE
-log "代理服务已启动 (PID: \$\$)"
-
-# 保持运行
-while true; do
-    sleep 30
-    if [ -f "/data/local/proxy/stop.flag" ]; then
-        log "收到停止信号"
-        break
-    fi
-done
-
-log "代理服务已停止"
-rm -f \$PID_FILE
-"""
+        // 使用 StringBuilder 构建脚本，避免转义问题
+        return StringBuilder()
+            .append("#!/system/bin/sh\n")
+            .append("# ============================================\n")
+            .append("# 代理守护脚本 - 自动生成\n")
+            .append("# ============================================\n")
+            .append("\n")
+            .append("TARGET_DIR=\"/data/local/proxy\"\n")
+            .append("LOG_FILE=\"$TARGET_DIR/run.log\"\n")
+            .append("PID_FILE=\"$TARGET_DIR/proxy.pid\"\n")
+            .append("\n")
+            .append("log() {\n")
+            .append("    echo \"$(date '+%Y-%m-%d %H:%M:%S') [INFO] $1\" >> $LOG_FILE\n")
+            .append("}\n")
+            .append("\n")
+            .append("# 获取默认路由接口\n")
+            .append("get_default_iface() {\n")
+            .append("    local iface=$(ip route show default 2>/dev/null | grep -oP 'dev \\K\\S+' | head -1)\n")
+            .append("    if [ -z \"$iface\" ]; then\n")
+            .append("        iface=$(ip link show | grep -E '^[0-9]+:' | grep -v lo | head -1 | awk -F': ' '{print $2}')\n")
+            .append("    fi\n")
+            .append("    if [ -z \"$iface\" ]; then\n")
+            .append("        iface=\"wlan0\"\n")
+            .append("    fi\n")
+            .append("    echo \"$iface\"\n")
+            .append("}\n")
+            .append("\n")
+            .append("log \"========================================\"\n")
+            .append("log \"代理守护启动\"\n")
+            .append("\n")
+            .append("# 启用 IP 转发\n")
+            .append("echo 1 > /proc/sys/net/ipv4/ip_forward\n")
+            .append("log \"IP 转发已启用\"\n")
+            .append("\n")
+            .append("# 获取接口\n")
+            .append("IFACE=$(get_default_iface)\n")
+            .append("log \"使用接口: $IFACE\"\n")
+            .append("\n")
+            .append("# 清理旧规则\n")
+            .append("iptables -t nat -F 2>/dev/null\n")
+            .append("iptables -F 2>/dev/null\n")
+            .append("ip rule del fwmark 0x1 table 100 2>/dev/null\n")
+            .append("ip route flush table 100 2>/dev/null\n")
+            .append("\n")
+            .append("# 添加转发规则\n")
+            .append("iptables -t nat -A POSTROUTING -o $IFACE -j MASQUERADE 2>/dev/null\n")
+            .append("iptables -A FORWARD -i $IFACE -o $IFACE -j ACCEPT 2>/dev/null\n")
+            .append("iptables -A FORWARD -i $IFACE -j ACCEPT 2>/dev/null\n")
+            .append("iptables -A FORWARD -o $IFACE -j ACCEPT 2>/dev/null\n")
+            .append("\n")
+            .append("# 添加路由规则\n")
+            .append("ip rule add fwmark 0x1 table 100 priority 100 2>/dev/null\n")
+            .append("ip route add default dev $IFACE table 100 2>/dev/null\n")
+            .append("\n")
+            .append("log \"路由规则设置完成\"\n")
+            .append("\n")
+            .append("# 记录 PID\n")
+            .append("echo $$ > $PID_FILE\n")
+            .append("log \"代理服务已启动 (PID: $$)\"\n")
+            .append("\n")
+            .append("# 保持运行\n")
+            .append("while true; do\n")
+            .append("    sleep 30\n")
+            .append("    if [ -f \"/data/local/proxy/stop.flag\" ]; then\n")
+            .append("        log \"收到停止信号\"\n")
+            .append("        break\n")
+            .append("    fi\n")
+            .append("done\n")
+            .append("\n")
+            .append("log \"代理服务已停止\"\n")
+            .append("rm -f $PID_FILE\n")
+            .toString()
     }
 
     private fun generateStopScript(): String {
-        return """
-#!/system/bin/sh
-# ============================================
-# 停止脚本 - 自动生成
-# ============================================
-
-TARGET_DIR="/data/local/proxy"
-LOG_FILE="\$TARGET_DIR/run.log"
-PID_FILE="\$TARGET_DIR/proxy.pid"
-
-log() {
-    echo "\$(date '+%Y-%m-%d %H:%M:%S') [STOP] \$1" >> \$LOG_FILE
-}
-
-log "========================================"
-log "开始停止代理服务..."
-
-# 停止进程
-if [ -f \$PID_FILE ]; then
-    PID=\$(cat \$PID_FILE)
-    if kill -0 \$PID 2>/dev/null; then
-        kill -9 \$PID
-        log "已强制终止进程 PID: \$PID"
-    fi
-    rm -f \$PID_FILE
-fi
-
-# 获取接口
-IFACE=\$(ip route show default 2>/dev/null | grep -oP 'dev \K\S+' | head -1)
-if [ -z "\$IFACE" ]; then
-    IFACE="wlan0"
-fi
-
-# 清理规则
-ip rule del fwmark 0x1 table 100 2>/dev/null
-ip route flush table 100 2>/dev/null
-iptables -t nat -F 2>/dev/null
-iptables -F 2>/dev/null
-iptables -t nat -D POSTROUTING -o \$IFACE -j MASQUERADE 2>/dev/null
-
-# 创建停止标记
-touch /data/local/proxy/stop.flag
-
-# 清理其他相关进程
-pkill -f proxy.sh 2>/dev/null
-pkill -f "sh.*proxy.sh" 2>/dev/null
-
-log "代理服务已停止"
-rm -f \$PID_FILE
-"""
+        return StringBuilder()
+            .append("#!/system/bin/sh\n")
+            .append("# ============================================\n")
+            .append("# 停止脚本 - 自动生成\n")
+            .append("# ============================================\n")
+            .append("\n")
+            .append("TARGET_DIR=\"/data/local/proxy\"\n")
+            .append("LOG_FILE=\"$TARGET_DIR/run.log\"\n")
+            .append("PID_FILE=\"$TARGET_DIR/proxy.pid\"\n")
+            .append("\n")
+            .append("log() {\n")
+            .append("    echo \"$(date '+%Y-%m-%d %H:%M:%S') [STOP] $1\" >> $LOG_FILE\n")
+            .append("}\n")
+            .append("\n")
+            .append("log \"========================================\"\n")
+            .append("log \"开始停止代理服务...\"\n")
+            .append("\n")
+            .append("# 停止进程\n")
+            .append("if [ -f $PID_FILE ]; then\n")
+            .append("    PID=$(cat $PID_FILE)\n")
+            .append("    if kill -0 $PID 2>/dev/null; then\n")
+            .append("        kill -9 $PID\n")
+            .append("        log \"已强制终止进程 PID: $PID\"\n")
+            .append("    fi\n")
+            .append("    rm -f $PID_FILE\n")
+            .append("fi\n")
+            .append("\n")
+            .append("# 获取接口\n")
+            .append("IFACE=$(ip route show default 2>/dev/null | grep -oP 'dev \\K\\S+' | head -1)\n")
+            .append("if [ -z \"$IFACE\" ]; then\n")
+            .append("    IFACE=\"wlan0\"\n")
+            .append("fi\n")
+            .append("\n")
+            .append("# 清理规则\n")
+            .append("ip rule del fwmark 0x1 table 100 2>/dev/null\n")
+            .append("ip route flush table 100 2>/dev/null\n")
+            .append("iptables -t nat -F 2>/dev/null\n")
+            .append("iptables -F 2>/dev/null\n")
+            .append("iptables -t nat -D POSTROUTING -o $IFACE -j MASQUERADE 2>/dev/null\n")
+            .append("\n")
+            .append("# 创建停止标记\n")
+            .append("touch /data/local/proxy/stop.flag\n")
+            .append("\n")
+            .append("# 清理其他相关进程\n")
+            .append("pkill -f proxy.sh 2>/dev/null\n")
+            .append("pkill -f \"sh.*proxy.sh\" 2>/dev/null\n")
+            .append("\n")
+            .append("log \"代理服务已停止\"\n")
+            .append("rm -f $PID_FILE\n")
+            .toString()
     }
 
     private fun extractAsset(assetName: String, destPath: String): Boolean {
