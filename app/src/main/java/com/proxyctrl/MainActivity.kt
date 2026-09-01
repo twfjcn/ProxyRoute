@@ -82,15 +82,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isRunning(): Boolean {
-        // 尝试多种方式检测进程
-        val out1 = runSu("ps -A 2>/dev/null | grep -E 'proxy.sh' | grep -v grep")
-        if (out1.isNotEmpty() && !out1.startsWith("ERR")) {
-            return true
-        }
-        val out2 = runSu("pgrep -f proxy.sh 2>/dev/null")
-        if (out2.isNotEmpty() && !out2.startsWith("ERR") && out2.matches(Regex("\\d+"))) {
-            return true
-        }
         // 检查 PID 文件
         val pidCheck = runSu("test -f $targetDir/proxy.pid && echo EXISTS")
         if (pidCheck.contains("EXISTS")) {
@@ -102,17 +93,19 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        return false
+        // 检查进程
+        val out = runSu("ps -A 2>/dev/null | grep -E 'proxy.sh' | grep -v grep")
+        return out.isNotEmpty() && !out.startsWith("ERR")
     }
 
     private fun getPid(): String {
-        val out = runSu("pgrep -f proxy.sh 2>/dev/null")
-        if (out.isNotEmpty() && !out.startsWith("ERR") && out.matches(Regex("\\d+"))) {
-            return out
-        }
         val pidFile = runSu("cat $targetDir/proxy.pid 2>/dev/null")
         if (pidFile.isNotEmpty() && pidFile.matches(Regex("\\d+"))) {
             return pidFile
+        }
+        val out = runSu("pgrep -f proxy.sh 2>/dev/null")
+        if (out.isNotEmpty() && !out.startsWith("ERR") && out.matches(Regex("\\d+"))) {
+            return out
         }
         return "未知"
     }
@@ -128,8 +121,8 @@ class MainActivity : AppCompatActivity() {
                 btnViewLog.isEnabled = installed
                 tvStatus.text = when {
                     !installed -> "状态：脚本未释放，请点初始化"
-                    running -> "状态：守护正在运行 (PID: ${getPid()})"
-                    else -> "状态：守护已停止"
+                    running -> "状态：VPN 转发正在运行 (PID: ${getPid()})"
+                    else -> "状态：VPN 转发已停止"
                 }
             }
         }
@@ -148,6 +141,7 @@ class MainActivity : AppCompatActivity() {
             CoroutineScope(Dispatchers.IO).launch {
                 runSu("rm -f $scriptProxy $scriptStop")
                 runSu("rm -f $targetDir/stop.flag")
+                runSu("rm -f $targetDir/proxy.pid")
 
                 val ok1 = extractAsset("proxy.sh", scriptProxy)
                 val ok2 = extractAsset("stop.sh", scriptStop)
@@ -165,7 +159,6 @@ class MainActivity : AppCompatActivity() {
 
         btnStart.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                // 先检查脚本是否存在
                 val checkScript = runSu("test -f $scriptProxy && echo EXISTS")
                 if (!checkScript.contains("EXISTS")) {
                     launch(Dispatchers.Main) {
@@ -174,24 +167,20 @@ class MainActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                // 检查是否已经在运行
                 if (isRunning()) {
                     launch(Dispatchers.Main) {
-                        Toast.makeText(this@MainActivity, "代理已在运行", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, "VPN 转发已在运行", Toast.LENGTH_SHORT).show()
                     }
                     refreshUi()
                     return@launch
                 }
 
-                // 清除停止标记
                 runSu("rm -f $targetDir/stop.flag")
-
-                // 启动脚本
                 runSu("nohup sh $scriptProxy >> $logFile 2>&1 &")
 
                 launch(Dispatchers.Main) {
                     Toast.makeText(this@MainActivity, "已发送启动请求", Toast.LENGTH_SHORT).show()
-                    delay(1000)
+                    delay(1500)
                     refreshUi()
                 }
             }
@@ -199,7 +188,6 @@ class MainActivity : AppCompatActivity() {
 
         btnStop.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                // 先检查脚本是否存在
                 val checkScript = runSu("test -f $scriptStop && echo EXISTS")
                 if (!checkScript.contains("EXISTS")) {
                     launch(Dispatchers.Main) {
@@ -208,10 +196,7 @@ class MainActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                // 执行停止脚本
                 runSu("sh $scriptStop")
-
-                // 强制清理
                 runSu("pkill -f proxy.sh 2>/dev/null")
                 runSu("rm -f $targetDir/proxy.pid")
 
