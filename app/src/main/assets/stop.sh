@@ -1,25 +1,25 @@
 #!/system/bin/sh
 # ============================================
-# 停止脚本
+# VPN 代理转发停止脚本
 # ============================================
 
 TARGET_DIR="/data/local/proxy"
 LOG_FILE="$TARGET_DIR/run.log"
 PID_FILE="$TARGET_DIR/proxy.pid"
 
+# 配置参数
+tun='tun0'
+dev='wlan0'
+pref=18000
+
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [STOP] $1" >> $LOG_FILE
 }
 
-# 获取实际接口
-get_network_iface() {
+# 获取实际物理接口
+get_physical_iface() {
     local iface=$(ip route show default 2>/dev/null | grep -oP 'dev \K\S+' | head -1)
-    if [ -n "$iface" ]; then
-        echo "$iface"
-        return
-    fi
-    iface=$(ip link show | grep -E '^[0-9]+:' | grep -v lo | head -1 | awk -F': ' '{print $2}')
-    if [ -n "$iface" ]; then
+    if [ -n "$iface" ] && [ "$iface" != "$tun" ]; then
         echo "$iface"
         return
     fi
@@ -27,7 +27,7 @@ get_network_iface() {
 }
 
 log "========================================"
-log "开始停止代理服务..."
+log "开始停止代理转发服务..."
 
 # 停止进程
 if [ -f $PID_FILE ]; then
@@ -39,25 +39,40 @@ if [ -f $PID_FILE ]; then
     rm -f $PID_FILE
 fi
 
-# 获取接口并清理规则
-IFACE=$(get_network_iface)
-log "清理接口 $IFACE 的规则..."
+# 获取物理接口
+dev=$(get_physical_iface)
+log "物理接口: $dev"
 
-# 清理路由规则
-ip rule del fwmark 0x1 table 100 2>/dev/null
-ip route flush table 100 2>/dev/null
+# 清理路由策略
+log "清理路由策略..."
+ip rule del from all table main pref $pref 2>/dev/null
+ip rule del from all iif $dev table $tun pref $(expr $pref - 1) 2>/dev/null
+ip route flush table $tun 2>/dev/null
 
 # 清理 iptables 规则
+log "清理 iptables 规则..."
+iptables -t nat -D POSTROUTING -o $tun -j MASQUERADE 2>/dev/null
+iptables -t nat -D POSTROUTING -o $dev -j MASQUERADE 2>/dev/null
 iptables -t nat -F 2>/dev/null
-iptables -F 2>/dev/null
-iptables -t nat -D POSTROUTING -o $IFACE -j MASQUERADE 2>/dev/null
+iptables -F FORWARD 2>/dev/null
+iptables -D FORWARD -i $tun -o $dev -j ACCEPT 2>/dev/null
+iptables -D FORWARD -i $dev -o $tun -j ACCEPT 2>/dev/null
+iptables -D FORWARD -i $tun -j ACCEPT 2>/dev/null
+iptables -D FORWARD -o $tun -j ACCEPT 2>/dev/null
 
 # 创建停止标记
 touch /data/local/proxy/stop.flag
+
+# 清理 TUN 接口（可选）
+if ip link show $tun > /dev/null 2>&1; then
+    ip link set $tun down 2>/dev/null
+    ip tuntap del dev $tun mode tun 2>/dev/null
+    log "TUN 接口 $tun 已删除"
+fi
 
 # 清理进程
 pkill -f proxy.sh 2>/dev/null
 pkill -f "sh.*proxy.sh" 2>/dev/null
 
-log "代理服务已停止"
+log "代理转发服务已停止"
 rm -f $PID_FILE
