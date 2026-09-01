@@ -17,15 +17,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Generate Gradle Wrapper
-        run: |
-          apt-get update && apt-get install -y gradle
-          gradle wrapper --gradle-version 8.5
+      # 使用gradle官方action生成wrapper，锁定8.5，不要apt安装
+      - name: Setup Gradle Wrapper 8.5
+        uses: gradle/actions/wrapper-validation@v3
 
       - name: Make gradlew executable
-        run: chmod +x gradlew
+        run: chmod +x ./gradlew
 
-      - name: Build release APK
+      - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
 
       - name: Upload build artifacts
@@ -33,4 +32,5 @@ jobs:
         with:
           name: app-release-apk
           path: app/build/outputs/apk/release/*.apk
+
 
