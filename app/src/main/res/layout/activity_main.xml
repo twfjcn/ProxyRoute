@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="状态：未初始化"
+        android:textSize="20sp"/>
+
+    <Button
+        android:id="@+id/btn_extract"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="初始化释放脚本"/>
+
+    <Button
+        android:id="@+id/btn_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="启动路由守护"/>
+
+    <Button
+        android:id="@+id/btn_stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="停止路由守护"/>
+
+    <Button
+        android:id="@+id/btn_view_log"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="查看运行日志"/>
+
+</LinearLayout>
