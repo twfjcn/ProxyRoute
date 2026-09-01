@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
-import java.io.File
 import java.io.InputStreamReader
 
 class MainActivity : AppCompatActivity() {
@@ -34,7 +33,6 @@ class MainActivity : AppCompatActivity() {
             while (br.readLine().also { line = it } != null) {
                 sb.appendLine(line)
             }
-            // 也要读取错误流，方便调试
             val errBr = BufferedReader(InputStreamReader(proc.errorStream))
             var errLine: String?
             while (errBr.readLine().also { errLine = it } != null) {
@@ -47,7 +45,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 检查 assets 中是否存在文件
     private fun assetExists(assetName: String): Boolean {
         return try {
             assets.open(assetName).close()
@@ -57,20 +54,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 直接生成脚本内容（备用方案）
-    private fun generateScriptContent(scriptType: String): String {
-        return if (scriptType == "proxy") {
-            """#!/system/bin/sh
+    private fun generateProxyScript(): String {
+        return """#!/system/bin/sh
 # ============================================
 # 代理守护脚本 - 自动生成
 # ============================================
 
 TARGET_DIR="/data/local/proxy"
-LOG_FILE="\$TARGET_DIR/run.log"
-PID_FILE="\$TARGET_DIR/proxy.pid"
+LOG_FILE="$${TARGET_DIR}/run.log"
+PID_FILE="$${TARGET_DIR}/proxy.pid"
 
 log() {
-    echo "[\$(date '+%Y-%m-%d %H:%M:%S')] \$1" >> \$LOG_FILE
+    echo "[\$(date '+%Y-%m-%d %H:%M:%S')] \$1" >> $${LOG_FILE}
 }
 
 # 获取默认路由接口
@@ -115,7 +110,7 @@ ip route add default dev \$IFACE table 100 2>/dev/null
 log "路由规则设置完成"
 
 # 记录 PID
-echo \$\$ > \$PID_FILE
+echo \$\$ > $${PID_FILE}
 log "代理服务已启动 (PID: \$\$)"
 
 # 保持运行
@@ -128,33 +123,35 @@ while true; do
 done
 
 log "代理服务已停止"
-rm -f \$PID_FILE
+rm -f $${PID_FILE}
 """
-        } else {
-            """#!/system/bin/sh
+    }
+
+    private fun generateStopScript(): String {
+        return """#!/system/bin/sh
 # ============================================
 # 停止脚本 - 自动生成
 # ============================================
 
 TARGET_DIR="/data/local/proxy"
-LOG_FILE="\$TARGET_DIR/run.log"
-PID_FILE="\$TARGET_DIR/proxy.pid"
+LOG_FILE="$${TARGET_DIR}/run.log"
+PID_FILE="$${TARGET_DIR}/proxy.pid"
 
 log() {
-    echo "[\$(date '+%Y-%m-%d %H:%M:%S')] [STOP] \$1" >> \$LOG_FILE
+    echo "[\$(date '+%Y-%m-%d %H:%M:%S')] [STOP] \$1" >> $${LOG_FILE}
 }
 
 log "========================================"
 log "开始停止代理服务..."
 
 # 停止进程
-if [ -f \$PID_FILE ]; then
-    PID=\$(cat \$PID_FILE)
+if [ -f $${PID_FILE} ]; then
+    PID=\$(cat $${PID_FILE})
     if kill -0 \$PID 2>/dev/null; then
         kill -9 \$PID
         log "已强制终止进程 PID: \$PID"
     fi
-    rm -f \$PID_FILE
+    rm -f $${PID_FILE}
 fi
 
 # 获取接口
@@ -178,16 +175,13 @@ pkill -f proxy.sh 2>/dev/null
 pkill -f "sh.*proxy.sh" 2>/dev/null
 
 log "代理服务已停止"
-rm -f \$PID_FILE
+rm -f $${PID_FILE}
 """
-        }
     }
 
     private fun extractAsset(assetName: String, destPath: String): Boolean {
         return try {
-            // 先检查 assets 中是否有文件
             if (assetExists(assetName)) {
-                // 从 assets 提取
                 val input = assets.open(assetName)
                 val bytes = input.readBytes()
                 input.close()
@@ -211,15 +205,10 @@ rm -f \$PID_FILE
                 
                 !chmodResult.startsWith("ERR")
             } else {
-                // assets 中没有文件，直接生成脚本内容
-                val scriptName = assetName.replace(".sh", "")
-                val content = generateScriptContent(scriptName)
-                
-                // 写入到临时文件
+                val content = if (assetName == "proxy.sh") generateProxyScript() else generateStopScript()
                 val tempFile = cacheDir.resolve(assetName)
                 tempFile.writeText(content)
                 
-                // 创建目录并复制
                 val mkdirResult = runSu("mkdir -p $targetDir")
                 if (mkdirResult.startsWith("ERR")) {
                     tempFile.delete()
@@ -282,11 +271,9 @@ rm -f \$PID_FILE
 
         btnExtract.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                // 先清理可能存在的旧文件
                 runSu("rm -f $scriptProxy $scriptStop")
                 runSu("rm -f $targetDir/stop.flag")
                 
-                // 检查 assets 中是否有脚本文件
                 val hasProxy = assetExists("proxy.sh")
                 val hasStop = assetExists("stop.sh")
                 
@@ -315,9 +302,7 @@ rm -f \$PID_FILE
 
         btnStart.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                // 清理停止标记
                 runSu("rm -f $targetDir/stop.flag")
-                // 使用 nohup 启动
                 runSu("nohup sh $scriptProxy > $logFile 2>&1 &")
                 launch(Dispatchers.Main) {
                     Toast.makeText(this@MainActivity, "已发送启动请求", Toast.LENGTH_SHORT).show()
@@ -329,7 +314,6 @@ rm -f \$PID_FILE
         btnStop.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
                 runSu("sh $scriptStop")
-                // 强制清理进程
                 runSu("pkill -f proxy.sh 2>/dev/null")
                 launch(Dispatchers.Main) {
                     Toast.makeText(this@MainActivity, "已发送停止请求", Toast.LENGTH_SHORT).show()
