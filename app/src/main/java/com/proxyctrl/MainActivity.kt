@@ -55,17 +55,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun generateProxyScript(): String {
-        return """#!/system/bin/sh
+        return """
+#!/system/bin/sh
 # ============================================
 # 代理守护脚本 - 自动生成
 # ============================================
 
 TARGET_DIR="/data/local/proxy"
-LOG_FILE="$${TARGET_DIR}/run.log"
-PID_FILE="$${TARGET_DIR}/proxy.pid"
+LOG_FILE="\$TARGET_DIR/run.log"
+PID_FILE="\$TARGET_DIR/proxy.pid"
 
 log() {
-    echo "[\$(date '+%Y-%m-%d %H:%M:%S')] \$1" >> $${LOG_FILE}
+    echo "\$(date '+%Y-%m-%d %H:%M:%S') [INFO] \$1" >> \$LOG_FILE
 }
 
 # 获取默认路由接口
@@ -110,7 +111,7 @@ ip route add default dev \$IFACE table 100 2>/dev/null
 log "路由规则设置完成"
 
 # 记录 PID
-echo \$\$ > $${PID_FILE}
+echo \$\$ > \$PID_FILE
 log "代理服务已启动 (PID: \$\$)"
 
 # 保持运行
@@ -123,35 +124,36 @@ while true; do
 done
 
 log "代理服务已停止"
-rm -f $${PID_FILE}
+rm -f \$PID_FILE
 """
     }
 
     private fun generateStopScript(): String {
-        return """#!/system/bin/sh
+        return """
+#!/system/bin/sh
 # ============================================
 # 停止脚本 - 自动生成
 # ============================================
 
 TARGET_DIR="/data/local/proxy"
-LOG_FILE="$${TARGET_DIR}/run.log"
-PID_FILE="$${TARGET_DIR}/proxy.pid"
+LOG_FILE="\$TARGET_DIR/run.log"
+PID_FILE="\$TARGET_DIR/proxy.pid"
 
 log() {
-    echo "[\$(date '+%Y-%m-%d %H:%M:%S')] [STOP] \$1" >> $${LOG_FILE}
+    echo "\$(date '+%Y-%m-%d %H:%M:%S') [STOP] \$1" >> \$LOG_FILE
 }
 
 log "========================================"
 log "开始停止代理服务..."
 
 # 停止进程
-if [ -f $${PID_FILE} ]; then
-    PID=\$(cat $${PID_FILE})
+if [ -f \$PID_FILE ]; then
+    PID=\$(cat \$PID_FILE)
     if kill -0 \$PID 2>/dev/null; then
         kill -9 \$PID
         log "已强制终止进程 PID: \$PID"
     fi
-    rm -f $${PID_FILE}
+    rm -f \$PID_FILE
 fi
 
 # 获取接口
@@ -175,7 +177,7 @@ pkill -f proxy.sh 2>/dev/null
 pkill -f "sh.*proxy.sh" 2>/dev/null
 
 log "代理服务已停止"
-rm -f $${PID_FILE}
+rm -f \$PID_FILE
 """
     }
 
@@ -303,7 +305,7 @@ rm -f $${PID_FILE}
         btnStart.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
                 runSu("rm -f $targetDir/stop.flag")
-                runSu("nohup sh $scriptProxy > $logFile 2>&1 &")
+                runSu("nohup sh $scriptProxy >> $logFile 2>&1 &")
                 launch(Dispatchers.Main) {
                     Toast.makeText(this@MainActivity, "已发送启动请求", Toast.LENGTH_SHORT).show()
                     refreshUi()
