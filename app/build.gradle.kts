@@ -9,8 +9,8 @@ android {
 
     defaultConfig {
         applicationId = "com.proxyctrl"
-        minSdk = 30        // Android11 API30，适配安卓11设备
-        targetSdk = 31     // 保持不变，不升级
+        minSdk = 30        // Android11 API30
+        targetSdk = 31     // 坚持不变
         versionCode = 1
         versionName = "1.0"
     }
@@ -20,19 +20,11 @@ android {
         abortOnError = false
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "dummy.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "dummy"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "dummy"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "dummy"
-        }
-    }
-
+    // 删除 signingConfigs 块！release不绑定签名，输出未签名包
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            // signingConfig = signingConfigs.getByName("release") // 注释掉！
         }
     }
 
