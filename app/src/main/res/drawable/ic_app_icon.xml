@@ -1,10 +1,123 @@
-<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="192"
+    android:viewportHeight="192">
+    
+    <!-- 背景圆 -->
+    <path
+        android:fillColor="#1a237e"
+        android:pathData="M96,16 C51.8,16 16,51.8 16,96 C16,140.2 51.8,176 96,176 C140.2,176 176,140.2 176,96 C176,51.8 140.2,16 96,16 Z" />
+    
+    <!-- 内部渐变圆 -->
+    <path
+        android:fillColor="#283593"
+        android:pathData="M96,28 C58.4,28 28,58.4 28,96 C28,133.6 58.4,164 96,164 C133.6,164 164,133.6 164,96 C164,58.4 133.6,28 96,28 Z" />
+    
+    <!-- 网络节点 - 中心 -->
+    <circle
+        android:fillColor="#4FC3F7"
+        android:cx="96"
+        android:cy="96"
+        android:radius="12" />
+    
+    <!-- 网络节点 - 左上 -->
+    <circle
+        android:fillColor="#4FC3F7"
+        android:cx="56"
+        android:cy="56"
+        android:radius="10" />
+    
+    <!-- 网络节点 - 右上 -->
+    <circle
+        android:fillColor="#4FC3F7"
+        android:cx="136"
+        android:cy="56"
+        android:radius="10" />
+    
+    <!-- 网络节点 - 左下 -->
+    <circle
+        android:fillColor="#4FC3F7"
+        android:cx="56"
+        android:cy="136"
+        android:radius="10" />
+    
+    <!-- 网络节点 - 右下 -->
+    <circle
+        android:fillColor="#4FC3F7"
+        android:cx="136"
+        android:cy="136"
+        android:radius="10" />
+    
+    <!-- 连接线 - 中心到左上 -->
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M96,96 L56,56" />
+    
+    <!-- 连接线 - 中心到右上 -->
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M96,96 L136,56" />
+    
+    <!-- 连接线 - 中心到左下 -->
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M96,96 L56,136" />
+    
+    <!-- 连接线 - 中心到右下 -->
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M96,96 L136,136" />
+    
+    <!-- 数据包流动指示（箭头） -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M90,80 L102,80 L96,68 Z"
+        android:alpha="0.8" />
+    
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M112,90 L112,102 L124,96 Z"
+        android:alpha="0.8" />
+    
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M102,112 L90,112 L96,124 Z"
+        android:alpha="0.8" />
+    
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M80,102 L80,90 L68,96 Z"
+        android:alpha="0.8" />
+    
+    <!-- "P" 字母（Proxy） -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8 -3.59,8 -8,8zM13,7h-2v6h6v-2h-4zM13,15h-2v2h2z"/>
+        android:pathData="M88,80 L88,112 L96,112 L96,104 L104,104 L104,96 L96,96 L96,80 Z" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M96,80 L104,80 L104,88 L96,88 Z" />
+    
+    <!-- 外圈光晕 -->
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.3"
+        android:pathData="M96,24 C56.2,24 24,56.2 24,96" />
+    
+    <path
+        android:strokeColor="#4FC3F7"
+        android:strokeWidth="3"
+        android:strokeAlpha="0.3"
+        android:pathData="M96,168 C135.8,168 168,135.8 168,96" />
+    
 </vector>
