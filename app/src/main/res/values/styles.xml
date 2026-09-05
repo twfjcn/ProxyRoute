@@ -1,8 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ProxyRoute" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryDark">@color/purple_700</item>
-        <item name="colorAccent">@color/teal_200</item>
+    <!-- 应用主题 -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- 按钮样式 -->
+    <style name="ButtonStylePrimary" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/btn_primary</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+
+    <style name="ButtonStyleSuccess" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/btn_success</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+
+    <style name="ButtonStyleDanger" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/btn_danger</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+
+    <style name="ButtonStyleSecondary" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/btn_secondary</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:minHeight">56dp</item>
     </style>
 </resources>
