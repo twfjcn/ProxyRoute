@@ -9,37 +9,34 @@ android {
 
     defaultConfig {
         applicationId = "com.proxyctrl"
-        minSdk = 30        // Android11 API30
-        targetSdk = 31     // 坚持不变
+        minSdk = 21
+        targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
     }
 
-    lint {
-        disable += "ExpiredTargetSdkVersion"
-        abortOnError = false
-    }
-
-    // 删除 signingConfigs 块！release不绑定签名，输出未签名包
     buildTypes {
         release {
             isMinifyEnabled = false
-            // signingConfig = signingConfigs.getByName("release") // 注释掉！
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
-
     compileOptions {
-        sourceCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
-        targetCompatibility = org.gradle.api.JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
-
     kotlinOptions {
         jvmTarget = "1.8"
     }
 }
 
 dependencies {
+    implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.20")
+    implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.cardview:cardview:1.0.0")
 }
-
